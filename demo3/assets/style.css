@@ -328,3 +328,60 @@ button { cursor: pointer; }
   .hero3d .wrap > div::before { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .scene-dust, .scene-dust::after { animation: none; } }
+
+/* ---------- 주요 실적 ---------- */
+.results { background: var(--bg); }
+.cases { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+.case { display: grid; grid-template-columns: 180px 1fr; gap: 24px; padding: 24px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; transition: transform .2s var(--ease), box-shadow .2s var(--ease); }
+.case:hover { transform: translateY(-2px); box-shadow: 0 12px 32px -16px rgba(31,27,22,.25); }
+.case-cat { font-size: 14px; font-weight: 600; color: var(--green); }
+.case-cat span { color: var(--muted); font-weight: 400; }
+.case h3 { font-family: var(--serif); font-size: 21px; font-weight: 700; line-height: 1.35; margin: 8px 0 10px; letter-spacing: -.02em; }
+.case p { color: var(--text-2); font-size: 15px; }
+.case-result { margin-top: 12px; color: var(--pen) !important; font-weight: 600; }
+.case-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 16px; font-size: 14px; font-weight: 600; border-bottom: 1.5px solid var(--text); padding-bottom: 1px; }
+.case-link .icon { width: 14px; height: 14px; }
+/* 개인정보를 가린 서류 자리 (실제 사진으로 교체) */
+.proof { position: relative; aspect-ratio: 210 / 297; background: #fbf8f1; border: 1px solid var(--line); border-radius: 4px; padding: 14px 12px; box-shadow: 0 1px 0 var(--line), 3px 3px 0 -1px #f1ebdf, 3px 3px 0 0 var(--line); overflow: hidden; }
+.proof b { display: block; text-align: center; font-size: 10px; letter-spacing: -.02em; padding-bottom: 6px; border-bottom: 1.5px solid var(--text); }
+.proof-rows { display: grid; gap: 7px; margin-top: 10px; }
+.proof-rows i { display: block; height: 5px; border-radius: 1px; background: #d9d2c4; }
+.proof-rows i.s { width: 62%; }
+.proof-rows i.mz { height: 12px; background: repeating-conic-gradient(#bfb6a6 0 25%, #d8d0c2 0 50%) 0 0 / 6px 6px; filter: blur(.4px); }
+.proof-stamp { position: absolute; right: 12px; bottom: 16px; width: 44px; height: 44px; border: 2px solid var(--pen); border-radius: 50%; color: var(--pen); font-size: 12px; font-weight: 800; display: grid; place-items: center; transform: rotate(-12deg); opacity: .85; }
+.results-more { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 40px; }
+.note-demo { font-size: 13px; color: var(--muted); margin-left: auto; }
+
+/* ---------- 명함 ---------- */
+.bizcard-wrap { background: #0b0a09; color: #efe7d8; padding: 112px 0 40px; }
+.bizcard { max-width: 760px; margin: 0 auto; }
+.bc-front { position: relative; aspect-ratio: 1.75; background: linear-gradient(160deg, #fbf8f1, #efe8da); color: var(--text); border-radius: 6px; padding: 40px 44px; box-shadow: 0 40px 80px -30px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.04); display: flex; flex-direction: column; transform: perspective(1400px) rotateX(4deg); transition: transform .6s var(--ease); }
+.bizcard:hover .bc-front { transform: perspective(1400px) rotateX(0deg); }
+.bc-front .logo { font-size: 18px; }
+.bc-name { margin-top: auto; font-family: var(--serif); font-size: 28px; font-weight: 700; letter-spacing: -.02em; }
+.bc-name small { font-size: 15px; font-weight: 500; color: var(--muted); margin-left: 6px; }
+.bc-info { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; margin-top: 16px; font-size: 14px; }
+.bc-info div { display: flex; gap: 10px; }
+.bc-info dt { color: var(--muted); min-width: 48px; }
+.bc-seal { position: absolute; top: 36px; right: 40px; width: 64px; height: 64px; border: 2.5px solid var(--pen); border-radius: 6px; color: var(--pen); font-weight: 800; font-size: 14px; line-height: 1.2; display: grid; place-items: center; text-align: center; transform: rotate(4deg); opacity: .9; }
+.bc-actions { display: flex; gap: 12px; justify-content: center; margin-top: 40px; }
+.bizcard-wrap .btn { background: #efe7d8; color: #14110d; }
+.bizcard-wrap .btn-2 { background: transparent; color: #efe7d8; box-shadow: inset 0 0 0 1.5px rgba(239,231,216,.5); }
+.bc-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 24px; margin-top: 72px; padding-top: 32px; border-top: 1px solid rgba(239,231,216,.12); font-size: 14px; color: #b9ae9c; }
+.bc-links a:hover { color: #fff; }
+.bc-legal { text-align: center; font-size: 12px; color: #7d7467; margin-top: 16px; }
+.bc-legal a { text-decoration: underline; }
+
+@media (max-width: 960px) { .cases { grid-template-columns: 1fr; } }
+@media (max-width: 760px) {
+  .case { grid-template-columns: 96px 1fr; gap: 16px; padding: 18px; }
+  .case h3 { font-size: 18px; }
+  .proof { padding: 8px 6px; } .proof b { font-size: 7px; } .proof-rows { gap: 5px; } .proof-stamp { width: 30px; height: 30px; font-size: 9px; right: 6px; bottom: 8px; }
+  .note-demo { margin-left: 0; width: 100%; }
+  .bizcard-wrap { padding: 72px 0 120px; }
+  .bc-front { aspect-ratio: auto; padding: 28px 24px; transform: none; }
+  .bc-info { grid-template-columns: 1fr; margin-top: 20px; }
+  .bc-name { margin-top: 32px; font-size: 24px; }
+  .bc-seal { width: 52px; height: 52px; font-size: 12px; top: 24px; right: 20px; }
+}
+.page-hero + .section, .page-hero + .quick-wrap { margin-top: 0; } .page-hero + .section { padding-top: 56px; }
