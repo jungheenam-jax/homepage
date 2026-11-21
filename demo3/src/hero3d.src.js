@@ -11,6 +11,7 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 const host = document.querySelector('[data-scene]');
 const params = new URLSearchParams(location.search);
 const POSTER = params.get('poster'); // 'd' | 'm' : 대체 이미지 촬영용
+const MOBILE = !POSTER && (matchMedia('(pointer: coarse)').matches || innerWidth <= 760);
 const rand = mulberry(7);
 function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 const R = (a, b) => a + (b - a) * rand();
@@ -22,7 +23,7 @@ async function start() {
   try { await Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 1200))]); } catch (e) {}
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: !!POSTER });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, POSTER ? 1 : 1.5));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, POSTER ? 1 : MOBILE ? 1.25 : 1.5));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -112,7 +113,7 @@ async function start() {
   const dust = buildDust();
 
   // ---------- 후처리 ----------
-  const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 }));
+  const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: MOBILE ? 2 : 4 }));
   composer.addPass(new RenderPass(scene, camera));
   const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.45, 0.6, 0.97);
   composer.addPass(bloom);
@@ -155,12 +156,18 @@ async function start() {
   // ---------- 마우스 ----------
   const mouse = { x: 0, y: 0, sx: 0, sy: 0 };
   const ndc = new THREE.Vector2(9, 9);
-  window.addEventListener('pointermove', e => {
-    mouse.x = e.clientX / window.innerWidth * 2 - 1;
-    mouse.y = e.clientY / window.innerHeight * 2 - 1;
+  let lastMove = -9;
+  const onPoint = e => {
     const r = host.getBoundingClientRect();
+    if (MOBILE) { mouse.x = (e.clientX - r.left) / r.width * 2 - 1; mouse.y = (e.clientY - r.top) / r.height * 2 - 1; }
+    else { mouse.x = e.clientX / window.innerWidth * 2 - 1; mouse.y = e.clientY / window.innerHeight * 2 - 1; }
     ndc.set((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
-  }, { passive: true });
+    lastMove = performance.now() / 1000;
+  };
+  window.addEventListener('pointermove', e => { if (!MOBILE) onPoint(e); }, { passive: true });
+  host.addEventListener('pointerdown', onPoint, { passive: true });
+  host.addEventListener('touchmove', e => onPoint(e.touches[0]), { passive: true });
+  if (MOBILE) { const hint = document.querySelector('.scene-hint'); if (hint) hint.textContent = '손가락으로 밀어 보고, 도장과 스탠드를 눌러 보세요'; }
   host.addEventListener('pointerleave', () => ndc.set(9, 9));
   const ray = new THREE.Raycaster();
   let hovered = null;
@@ -225,6 +232,8 @@ async function start() {
 
     // 시점
     const k = reduce ? 0 : 1;
+    // 휴대폰: 손대지 않으면 천천히 시점이 흔들림
+    if (MOBILE && performance.now() / 1000 - lastMove > 3) { mouse.x = Math.sin(time * 0.35) * 0.6; mouse.y = Math.sin(time * 0.22) * 0.25; }
     mouse.sx += (mouse.x * k - mouse.sx) * Math.min(1, dt * 3);
     mouse.sy += (mouse.y * k - mouse.sy) * Math.min(1, dt * 3);
     const sc = Math.min(1, Math.max(0, -host.getBoundingClientRect().top / H));
@@ -424,7 +433,7 @@ async function start() {
     const spot = new THREE.SpotLight(0xffc98a, 7.5, 0, 0.78, 0.75, 1.6);
     spot.position.set(0, 0, 0.05); head.add(spot);
     const tObj = new THREE.Object3D(); tObj.position.copy(target); scene.add(tObj); spot.target = tObj;
-    spot.castShadow = true; spot.shadow.mapSize.set(2048, 2048); spot.shadow.bias = -0.0002; spot.shadow.normalBias = 0.012; spot.shadow.camera.near = 0.03; spot.shadow.camera.far = 2.5; spot.shadow.radius = 4;
+    spot.castShadow = true; spot.shadow.mapSize.setScalar(MOBILE ? 1024 : 2048); spot.shadow.bias = -0.0002; spot.shadow.normalBias = 0.012; spot.shadow.camera.near = 0.03; spot.shadow.camera.far = 2.5; spot.shadow.radius = 4;
     const fill = new THREE.PointLight(0xffb36b, 0.16, 0, 2); fill.position.set(0, 0, -0.05); head.add(fill);
 
     // 빛기둥

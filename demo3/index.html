@@ -193,10 +193,17 @@
   <script>
   (function () {
     var q = location.search;
+    // 휴대폰도 3D를 띄우되, 사진을 먼저 보여 주고 페이지가 다 뜬 뒤에 3D를 불러옴. 데이터 절약 모드면 사진만.
     var big = matchMedia('(min-width: 761px) and (pointer: fine)').matches || /poster=/.test(q);
+    var save = navigator.connection && navigator.connection.saveData;
     var gl = false; try { var c = document.createElement('canvas'); gl = !!(c.getContext('webgl2')); } catch (e) {}
     if (/poster=/.test(q)) document.documentElement.classList.add('poster-shot');
-    if (big && gl && !/no3d/.test(q)) { var s = document.createElement('script'); s.src = 'assets/hero3d.js'; s.defer = true; document.body.appendChild(s); }
+    function load3d() { var s = document.createElement('script'); s.src = 'assets/hero3d.js'; document.body.appendChild(s); }
+    if (gl && !save && !/no3d/.test(q)) {
+      if (big) load3d();
+      else if (document.readyState === 'complete') setTimeout(load3d, 300);
+      else window.addEventListener('load', function () { setTimeout(load3d, 300); });
+    }
   })();
   </script>
 </body>
