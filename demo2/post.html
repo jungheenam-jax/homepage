@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>소식 · 백현 행정사사무소</title>
+  <meta name="description" content="인허가, 출입국·비자, 행정심판, 민원 서류의 작성과 제출을 대신합니다.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="wrap">
+      <a href="index.html" class="logo"><span class="mark">백</span>백현 행정사사무소</a>
+      <button class="menu-btn" aria-label="메뉴" aria-expanded="false"><span></span><span></span></button>
+      <nav class="nav">
+        <a href="index.html#services">업무분야</a>
+        <a href="index.html#process">진행절차</a>
+        <a href="index.html#about">사무소 소개</a>
+        <a href="board.html" class="active">업무 일지</a>
+        <a href="index.html#contact" class="btn btn-sm">상담 문의</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <section class="page-hero">
+      <div class="wrap" style="max-width:824px">
+        <p class="label rise" data-meta></p>
+        <h1 class="rise" data-title></h1>
+      </div>
+    </section>
+    <article class="article">
+      <div class="article-body rise" data-body></div>
+      <a href="board.html" class="back"><svg class="icon" viewBox="0 0 24 24" style="transform:scaleX(-1)"><path d="M5 12h14M13 6l6 6-6 6"/></svg>목록으로</a>
+    </article>
+  </main>
+  <footer class="footer">
+    <div class="wrap">
+      <div>
+        <p class="logo"><span class="mark">백</span>백현 행정사사무소</p>
+        <p>대표 행정사 백재우 · 사업자등록번호 000-00-00000 · 행정사 등록번호 제0000-0000호</p>
+        <p>© 2026 백현 행정사사무소</p>
+      </div>
+      <div><a href="admin.html">관리자</a></div>
+    </div>
+  </footer>
+  <script src="assets/vendor/lenis.min.js"></script>
+  <script src="assets/store.js"></script>
+  <script>
+  (function () {
+    var id = new URLSearchParams(location.search).get('id');
+    var p = id && PostStore.get(id);
+    document.querySelector('[data-title]').textContent = p ? p.title : '글을 찾을 수 없습니다';
+    document.querySelector('[data-meta]').innerHTML = p ? '<b>' + PostStore.esc(p.category) + '</b>' + PostStore.fmt(p.date) : '';
+    document.querySelector('[data-body]').textContent = p ? p.body : '삭제되었거나 주소가 잘못된 글입니다.';
+    if (p && p.link) { var a = document.createElement('a'); a.href = p.link; a.target = '_blank'; a.className = 'btn btn-2'; a.style.marginTop = '32px'; a.textContent = '네이버 블로그에서 원문 보기'; document.querySelector('[data-body]').after(a); }
+    if (p) document.title = p.title + ' · 백현 행정사사무소';
+  })();
+  </script>
+  <script src="assets/app.js"></script>
+</body>
+</html>
