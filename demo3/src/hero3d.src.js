@@ -63,20 +63,13 @@ async function start() {
   buildShelf();
 
   // ---------- 서류 뭉치 ----------
-  const docA = makeDocTexture('행정심판 청구서', true);
-  const docB = makeDocTexture('법인 설립허가 신청서', false);
-  const docC = makeDocTexture('영업 신고서', false);
-  const main = paperStack(0.20, -0.02, 34, -0.07, docA);   // 빨간 펜 표시가 있는 서류
-  paperStack(0.03, -0.42, 52, 0.12, docB);               // 스탠드 아래 뒤쪽
-  paperStack(0.5, -0.36, 22, -0.25, docC);               // 오른쪽 뒤
-
-  // 도장 자국
-  const sealTex = makeSealTexture();
-  const seal = new THREE.Mesh(new THREE.PlaneGeometry(0.06, 0.06), new THREE.MeshStandardMaterial({ map: sealTex, transparent: true, opacity: 0, roughness: 0.6, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }));
-  seal.rotation.set(-Math.PI / 2, 0, 0.18);
-  main.top.add(seal);
-  seal.position.set(0.055, -0.075, 0.0016); // top 기준 (평면 좌표)
-  seal.rotation.set(0, 0, 0.18);
+  const TITLES = ['행정심판 청구서', '집행정지 신청서', '법인 설립허가 신청서', '사업자 등록 신청서', '영업 신고서', '고용추천서 신청서'];
+  let docN = 0;
+  const main = paperStack(0.20, -0.02, 34, -0.07, newDoc(true));   // 빨간 펜 표시가 있는 서류
+  paperStack(0.03, -0.42, 52, 0.12, newDoc(false));                 // 스탠드 아래 뒤쪽
+  const done = paperStack(0.52, -0.36, 14, -0.22, newDoc(false, true)); // '완료' 함
+  buildTray(done);
+  const sealImg = makeSealTexture().image;
 
   // ---------- 서류철 ----------
   const folder = buildFolder(-0.08, 0.2, 0.22);
@@ -89,10 +82,13 @@ async function start() {
   const pen2 = buildPencil();
   pen2.position.set(0.31, 0.004, 0.26); pen2.rotation.y = 0.35;
   interactive.push(pen2);
+  const hitMat = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false });
+  const hitBox = (o, w, h, d, y) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), hitMat); m.position.y = y || 0; o.add(m); };
+  hitBox(pen, 0.17, 0.035, 0.04); hitBox(pen2, 0.16, 0.035, 0.04);
 
   // ---------- 도장과 인주 ----------
   const stamp = buildStamp();
-  stamp.position.set(0.47, 0, 0.3);
+  stamp.position.set(0.47, 0, 0.3); hitBox(stamp, 0.05, 0.09, 0.05, 0.04);
   interactive.push(stamp);
   const pad = buildPad(); pad.position.set(0.57, 0, 0.23); scene.add(pad);
 
@@ -163,22 +159,38 @@ async function start() {
   // 마우스: 화면 어디서든 시점이 마우스를 따라감
   window.addEventListener('pointermove', e => {
     if (e.pointerType !== 'mouse' && e.pointerType !== 'pen') return;
+    if (down && (down.lamp || down.pen)) return; // 스탠드·만년필을 끄는 동안 시점 고정
     mouse.x = e.clientX / window.innerWidth * 2 - 1; mouse.y = e.clientY / window.innerHeight * 2 - 1;
     setNdc(e); lastMove = now();
   }, { passive: true });
   // 손가락: 끄는 방향으로 장면이 따라옴, 짧게 누르면 물건 작동
-  host.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY, t: now(), mx: mouse.x, my: mouse.y, moved: 0 }; if (e.pointerType !== 'mouse') setNdc(e); lastMove = now(); }, { passive: true });
+  host.addEventListener('pointerdown', e => {
+    setNdc(e);
+    const o = pick();
+    down = { x: e.clientX, y: e.clientY, t: now(), mx: mouse.x, my: mouse.y, moved: 0, lamp: o === lamp.group, pen: o === pen, tilt: lampTilt };
+    if (down.lamp || down.pen) { try { host.setPointerCapture(e.pointerId); } catch (er) {} }
+    if (down.pen && !penGrab()) down.pen = false;
+    lastMove = now();
+  });
+  host.addEventListener('pointermove', e => {
+    if (down && down.pen) { setNdc(e); down.moved = Math.max(down.moved, Math.hypot(e.clientX - down.x, e.clientY - down.y)); penDrag(); return; }
+    if (!down || !down.lamp) return;
+    const dy = e.clientY - down.y; down.moved = Math.max(down.moved, Math.abs(dy), Math.abs(e.clientX - down.x));
+    lampTilt = Math.max(-0.15, Math.min(0.15, down.tilt + dy / 160 * 0.15)); // 약 ±8도
+  });
+  host.addEventListener('touchmove', e => { if (down && (down.lamp || down.pen) && e.cancelable) e.preventDefault(); }, { passive: false });
   host.addEventListener('touchmove', e => {
-    if (!down) return; const t = e.touches[0], r = host.getBoundingClientRect();
+    if (!down || down.lamp || down.pen) return; const t = e.touches[0], r = host.getBoundingClientRect();
     const dx = t.clientX - down.x, dy = t.clientY - down.y; down.moved = Math.max(down.moved, Math.hypot(dx, dy));
     mouse.x = clamp(down.mx - dx / r.width * 2.4); mouse.y = clamp(down.my - dy / r.height * 1.2); lastMove = now();
   }, { passive: true });
   host.addEventListener('pointerup', e => {
     if (!down) return; const d = down; down = null;
-    if (Math.max(d.moved, Math.hypot(e.clientX - d.x, e.clientY - d.y)) > 12 || now() - d.t > 0.6) return;
-    setNdc(e); const o = pick(); if (o && o.userData.onClick) o.userData.onClick();
+    if (d.pen) { penRelease(); return; }
+    if (Math.max(d.moved, Math.hypot(e.clientX - d.x, e.clientY - d.y)) > 12 || (!d.lamp && now() - d.t > 0.6)) return;
+    setNdc(e); const o = pick(); if (o && o.userData.onClick && (!d.lamp || o === lamp.group)) o.userData.onClick();
   });
-  host.addEventListener('pointercancel', () => { down = null; });
+  host.addEventListener('pointercancel', () => { if (down && down.pen) penRelease(); down = null; });
   if (MOBILE) { const hint = document.querySelector('.scene-hint'); if (hint) hint.textContent = '손가락으로 밀어 보고, 도장과 스탠드를 눌러 보세요'; }
   host.addEventListener('pointerleave', () => ndc.set(9, 9));
   const ray = new THREE.Raycaster();
@@ -193,29 +205,180 @@ async function start() {
   }
 
 
-  // 도장 찍기 애니메이션
-  let stampT = -1;
-  stamp.userData.onClick = () => { if (stampT < 0) { stampT = 0; seal.material.opacity = 0; } };
+  // ---------- 서류 캔버스: 원본 + 서명 + 도장 ----------
+  function redraw(doc) {
+    const x = doc.ctx, w = 724;
+    x.drawImage(doc.base, 0, 0);
+    if (doc.sign > 0) {
+      x.save(); x.globalAlpha = doc.signFade ?? 1; x.beginPath(); x.rect(440, 940, 260 * doc.sign, 90); x.clip();
+      x.fillStyle = '#18233a'; x.font = `64px "Nanum Pen Script", ${FONT}`; x.fillText('백 현', 480, 1004);
+      x.lineWidth = 3; x.strokeStyle = '#18233a'; x.beginPath(); x.moveTo(470, 1010); x.bezierCurveTo(540, 1000, 600, 1022, 680, 996); x.stroke();
+      x.restore();
+    }
+    if (doc.sealed) { x.save(); x.translate(552, 770); x.rotate(0.18); x.globalAlpha = 0.92; x.drawImage(sealImg, -104, -104, 208, 208); x.restore(); }
+    doc.tex.needsUpdate = true;
+  }
+  function newDoc(marks, sealed) {
+    const tex = makeDocTexture(TITLES[docN++ % TITLES.length], marks);
+    const cv = tex.image, base = document.createElement('canvas'); base.width = cv.width; base.height = cv.height; base.getContext('2d').drawImage(cv, 0, 0);
+    const doc = { tex, ctx: cv.getContext('2d'), base, sign: 0, sealed: false };
+    if (sealed) { doc.sealed = true; doc.sign = 1; Promise.resolve().then(() => redraw(doc)); }
+    return doc;
+  }
+  const SEAL_AT = new THREE.Vector3((552 / 724 - 0.5) * 0.21, (0.5 - 770 / 1024) * 0.297, 0);
+  const toWorld = (sheet, v2) => sheet.localToWorld(v2.clone());
+
+  // ---------- 도장 ----------
+  let stampT = -1, busy = false;
+  stamp.userData.onClick = () => { if (stampT < 0 && !busy && !main.top.userData.doc.sealed) { stampT = 0; busy = true; } };
   const stampHome = stamp.position.clone();
-  const sealWorld = new THREE.Vector3();
   function updateStamp(dt) {
     if (stampT < 0) return;
     stampT += dt;
-    seal.getWorldPosition(sealWorld);
+    const sw = toWorld(main.top, SEAL_AT);
     const t = stampT;
-    const to = new THREE.Vector3(sealWorld.x, main.height, sealWorld.z);
+    const to = new THREE.Vector3(sw.x, sw.y + 0.0005, sw.z);
     let p = stampHome.clone(), lift = 0;
-    if (t >= 0.6) seal.material.opacity = 0.92;
+    if (t >= 0.6 && !main.top.userData.doc.sealed) { main.top.userData.doc.sealed = true; redraw(main.top.userData.doc); }
     if (t < 0.45) { const k = ease(t / 0.45); p.lerpVectors(stampHome, to, k); lift = Math.sin(k * Math.PI) * 0.12 + k * 0.03; }
     else if (t < 0.6) { p.copy(to); lift = 0.03 * (1 - ease((t - 0.45) / 0.15)); }
     else if (t < 0.8) { p.copy(to); lift = 0; }
     else if (t < 1.35) { const k = ease((t - 0.8) / 0.55); p.lerpVectors(to, stampHome, k); lift = Math.sin(k * Math.PI) * 0.1; }
-    else { stampT = -1; p.copy(stampHome); }
+    else { stampT = -1; p.copy(stampHome); setTimeout(() => sendToDone(), 350); }
     stamp.position.set(p.x, p.y + lift, p.z);
   }
+
+  // ---------- 완료 함으로 날아가는 서류 ----------
+  // 다섯 가지 공기 흐름: 종이가 휘는 정도(bend: 길이 방향, bendW: 폭 방향), 비틀림, 물결, 경로
+  const FLIGHTS = [
+    { dur: 1.9, arc: 0.11, side: 0.00, bend: 0.010, bendW: 0.002, twist: 0.000, wave: 0.0018, freq: 1.2, pitch: 0.10, roll: 0.03, yaw: 0.25 },
+    { dur: 2.1, arc: 0.09, side: 0.03, bend: 0.006, bendW: 0.004, twist: 0.004, wave: 0.0025, freq: 1.6, pitch: 0.16, roll: 0.06, yaw: -0.2 },
+    { dur: 2.0, arc: 0.13, side: -0.03, bend: 0.008, bendW: 0.000, twist: -0.005, wave: 0.0015, freq: 1.0, pitch: 0.06, roll: -0.08, yaw: 0.35 },
+    { dur: 2.3, arc: 0.12, side: 0.02, bend: 0.012, bendW: 0.003, twist: 0.002, wave: 0.0030, freq: 2.0, pitch: 0.12, roll: 0.04, yaw: -0.3 },
+    { dur: 2.0, arc: 0.10, side: -0.015, bend: 0.005, bendW: 0.005, twist: -0.003, wave: 0.0020, freq: 1.4, pitch: 0.09, roll: -0.05, yaw: 0.15 },
+  ];
+  let fly = null;
+  function sendToDone() {
+    const sheet = main.top, F = FLIGHTS[(rand() * FLIGHTS.length) | 0];
+    const q0 = sheet.getWorldQuaternion(new THREE.Quaternion()), p0 = sheet.getWorldPosition(new THREE.Vector3());
+    scene.attach(sheet);
+    // 다음 서류를 뭉치 위로
+    if (main.n > 12) { main.n--; main.inst.count = main.n; main.height = main.t * main.n; }
+    main.top = makeSheet(sheet.geometry, newDoc(rand() < 0.5));
+    main.top.geometry.attributes.position.array.set(main.top.geometry.userData.rest = Float32Array.from(sheet.geometry.userData.rest));
+    main.top.position.y = main.height + 0.0009; main.group.add(main.top);
+    // 도착 자리
+    const local = new THREE.Object3D(); local.position.set(R(-0.004, 0.004), done.height + 0.0009, R(-0.004, 0.004)); local.rotation.set(-Math.PI / 2, 0, R(-0.05, 0.05));
+    done.group.add(local); done.group.updateMatrixWorld(true);
+    const p1 = local.getWorldPosition(new THREE.Vector3()), q1 = local.getWorldQuaternion(new THREE.Quaternion());
+    fly = { sheet, F, t: 0, p0, p1, q0, q1, local, phase: rand() * 6.28, sway: R(0.6, 1.0) };
+  }
+  const flyQ = new THREE.Quaternion(), flyE = new THREE.Euler(), flyP = new THREE.Vector3(), flyC = new THREE.Vector3();
+  function updateFly(dt, time) {
+    if (!fly) return;
+    const f = fly, F = f.F; f.t += dt;
+    const s = Math.min(1, f.t / F.dur);
+    const k = s < 0.5 ? 2 * s * s : 1 - Math.pow(-2 * s + 2, 2) / 2; // 부드럽게 출발, 부드럽게 내려앉음
+    const env = Math.sin(Math.PI * s); // 공중에서만 휘어짐
+    // 경로: 위로 둥글게, 옆으로 약간 흘러감 (내려올 때 살짝 늦게)
+    flyC.lerpVectors(f.p0, f.p1, 0.5); flyC.y = Math.max(f.p0.y, f.p1.y) + F.arc * 2;
+    const dir = new THREE.Vector3().subVectors(f.p1, f.p0); const perp = new THREE.Vector3(-dir.z, 0, dir.x).normalize();
+    flyC.addScaledVector(perp, F.side * 2);
+    const a = 1 - k;
+    flyP.set(a * a * f.p0.x + 2 * a * k * flyC.x + k * k * f.p1.x, a * a * f.p0.y + 2 * a * k * flyC.y + k * k * f.p1.y, a * a * f.p0.z + 2 * a * k * flyC.z + k * k * f.p1.z);
+    flyP.y += Math.sin(s * Math.PI * 3 + f.phase) * 0.004 * env * f.sway; // 공기 위에서 살짝 뜨고 가라앉음
+    f.sheet.position.copy(flyP);
+    // 자세: 처음→끝 자세 사이를 돌며, 공중에서만 약간 기울고 돎
+    f.sheet.quaternion.slerpQuaternions(f.q0, f.q1, k);
+    flyE.set(F.pitch * env * Math.sin(s * Math.PI * 1.5 + f.phase) * f.sway, F.roll * env * Math.sin(s * Math.PI * 2 + f.phase * 0.7), F.yaw * env);
+    f.sheet.quaternion.multiply(flyQ.setFromEuler(flyE));
+    // 격자 변형: 종이 평면의 각 점을 밀어 올리거나 내림
+    const pos = f.sheet.geometry.attributes.position, rest = f.sheet.geometry.userData.rest;
+    const tt = time * F.freq * 2.4;
+    for (let i = 0; i < pos.count; i++) {
+      const X = rest[i * 3] / 0.105, Y = rest[i * 3 + 1] / 0.1485;
+      const lead = (Y + 1) * 0.5;
+      const z = F.bend * Y * Y + F.bendW * X * X + F.twist * X * Y
+        + F.wave * Math.sin(Y * 2.6 - tt + f.phase) * lead + F.wave * 0.4 * Math.sin(X * 2.2 - tt * 0.8) * lead;
+      pos.array[i * 3 + 2] = rest[i * 3 + 2] * (1 - env) + z * env * f.sway;
+    }
+    pos.needsUpdate = true;
+    if (s >= 1) {
+      f.sheet.geometry.attributes.position.array.set(rest); f.sheet.geometry.attributes.position.needsUpdate = true;
+      f.sheet.geometry.computeVertexNormals();
+      f.local.add(f.sheet); f.sheet.position.set(0, 0, 0); f.sheet.quaternion.identity();
+      done.height += done.t; fly = null; busy = false;
+    } else if ((f.t * 60 | 0) % 3 === 0) f.sheet.geometry.computeVertexNormals();
+  }
+
+  // ---------- 만년필: 서류로 가서 서명 ----------
+  let penT = -1;
+  const penHome = { p: pen.position.clone(), q: pen.quaternion.clone() };
+  const NIB = new THREE.Vector3(0.066, 0, 0);
+  const SIGN = [[470, 1000], [690, 998]]; // 캔버스 좌표
+  const canvasToLocal = (cx, cy) => new THREE.Vector3((cx / 724 - 0.5) * 0.21, (0.5 - cy / 1024) * 0.297, 0.0012);
+  let penStart = null, penFloat = null;
+  const floatPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.07), floatHit = new THREE.Vector3();
+  function penGrab() { if (penT >= 0 || busy) return false; busy = true; pen.userData.anim = true; penFloat = { p: pen.position.clone(), aim: pen.position.clone(), t: 0 }; return true; }
+  function penDrag() { if (!penFloat) return; ray.setFromCamera(ndc, camera); if (ray.ray.intersectPlane(floatPlane, floatHit)) { floatHit.x = Math.max(-0.3, Math.min(0.75, floatHit.x)); floatHit.z = Math.max(-0.35, Math.min(0.4, floatHit.z)); penFloat.aim.copy(floatHit); } }
+  function penRelease() {
+    if (!penFloat) { if (!penGrab()) return; }
+    penFloat = null; penStart = { p: pen.position.clone(), q: pen.quaternion.clone() }; penT = 0;
+    const doc = main.top.userData.doc; doc.sign = 0; doc.signedAt = 0; doc.signFade = 1;
+  }
+  pen.userData.onClick = () => penRelease();
+  function updatePenFloat(dt, time) {
+    if (!penFloat) return;
+    penFloat.t += dt;
+    const lift = Math.min(1, penFloat.t / 0.6), e = 1 - Math.pow(1 - lift, 3);
+    const target = penFloat.aim.clone(); target.y = penHome.p.y + (0.07 - penHome.p.y) * e + Math.sin(time * 1.6) * 0.004 * e;
+    pen.position.lerp(target, Math.min(1, dt * 4));
+    const qF = penHome.q.clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.sin(time * 1.1) * 0.05 * e, 0, (-0.25 + Math.sin(time * 0.9) * 0.04) * e)));
+    pen.quaternion.slerp(qF, Math.min(1, dt * 4));
+  }
+  const signed = new Set();
+  function updatePen(dt, time) {
+    if (penT < 0) return;
+    penT += dt;
+    const doc = main.top.userData.doc, t = penT;
+    const yaw = main.group.rotation.y + 0.5;
+    const qW = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, yaw, -0.75, 'YZX'));
+    const nibAt = (k) => {
+      const cx = SIGN[0][0] + (SIGN[1][0] - SIGN[0][0]) * k, cy = SIGN[0][1] + Math.sin(k * 26) * 14 * (1 - k * 0.3) - 10 * Math.sin(k * 7);
+      return main.top.localToWorld(canvasToLocal(cx, cy));
+    };
+    let pos, q;
+    const placeFor = (nibW, qq, up) => nibW.clone().sub(NIB.clone().applyQuaternion(qq)).add(new THREE.Vector3(0, up, 0));
+    if (t < 0.7) { const k = ease(t / 0.7); q = penStart.q.clone().slerp(qW, k); pos = penStart.p.clone().lerp(placeFor(nibAt(0), qW, 0), k); pos.y += Math.sin(k * Math.PI) * 0.02; }
+    else if (t < 2.1) { const k = (t - 0.7) / 1.4; q = qW; pos = placeFor(nibAt(k), qW, Math.max(0, Math.sin(k * 52)) * 0.0015); doc.sign = k; if ((t * 60 | 0) % 2 === 0) redraw(doc); }
+    else if (t < 2.9) { if (doc.sign < 1) { doc.sign = 1; doc.signedAt = time; signed.add(doc); redraw(doc); } const k = ease((t - 2.1) / 0.8); q = qW.clone().slerp(penHome.q, k); pos = placeFor(nibAt(1), qW, 0).lerp(penHome.p, k); pos.y += Math.sin(k * Math.PI) * 0.06; }
+    else { penT = -1; busy = false; pen.userData.anim = false; pos = penHome.p.clone(); q = penHome.q.clone(); }
+    pen.position.copy(pos); pen.quaternion.copy(q);
+  }
+
+  // ---------- 빨간 펜: 굴러가기 ----------
+  pen2.rotation.order = 'YXZ';
+  const pencil = { home: pen2.position.clone(), s: 0, from: 0, to: 0, t: -1, yaw: pen2.rotation.y };
+  const pencilPerp = new THREE.Vector3(Math.sin(pencil.yaw), 0, Math.cos(pencil.yaw));
+  pen2.userData.onClick = () => {
+    const faces = 7 + ((rand() * 6) | 0), d = faces * 0.004;
+    let dir = rand() < 0.5 ? -1 : 1; if (Math.abs(pencil.s + dir * d) > 0.07) dir = -dir;
+    pencil.from = pencil.s; pencil.to = pencil.s + dir * d; pencil.t = 0;
+  };
+  function updatePencil(dt) {
+    if (pencil.t < 0) return;
+    pencil.t += dt; const k = Math.min(1, pencil.t / 1.1);
+    const e = 1 - Math.pow(1 - k, 3); // 마찰로 서서히 멈춤
+    pencil.s = pencil.from + (pencil.to - pencil.from) * e;
+    pen2.position.x = pencil.home.x + pencilPerp.x * pencil.s; pen2.position.z = pencil.home.z + pencilPerp.z * pencil.s;
+    pen2.rotation.x = pencil.s / 0.004 * (Math.PI / 3);
+    if (k >= 1) pencil.t = -1;
+  }
+
+  // ---------- 스탠드: 누르면 끄고 켜기, 위아래로 끌면 각도 조절 ----------
+  const lampQ0 = lamp.head.quaternion.clone(), lampAxis = new THREE.Vector3(1, 0, 0);
+  let lampTilt = 0, lampTiltS = 0;
   lamp.group.userData.onClick = () => { lamp.on = !lamp.on; document.documentElement.dataset.lamp = lamp.on ? 'on' : 'off'; };
-  pen.userData.onClick = () => { pen.userData.spin = 1; };
-  pen2.userData.onClick = () => { pen2.userData.spin = 1; };
   folder.userData.onClick = () => { folder.userData.open = !folder.userData.open; };
   mug.userData.onClick = () => { mug.userData.spin = 1; };
 
@@ -226,7 +389,7 @@ async function start() {
 
   const clock = new THREE.Clock();
   let lampLevel = 1, first = true, autoStamp = POSTER ? -1 : 1.6;
-  if (POSTER) seal.material.opacity = 0.92;
+  if (POSTER) { main.top.userData.doc.sealed = true; redraw(main.top.userData.doc); }
   const tmp = new THREE.Vector3();
 
   function frame() {
@@ -257,18 +420,24 @@ async function start() {
     for (const o of interactive) {
       const base = o.userData.baseY ?? (o.userData.baseY = o.position.y);
       o.userData.lift = (o.userData.lift || 0) + (((o === hovered && o !== lamp.group) ? 1 : 0) - (o.userData.lift || 0)) * Math.min(1, dt * 10);
-      if (o === stamp && stampT >= 0) continue;
+      if ((o === stamp && stampT >= 0) || o.userData.anim) continue;
       o.position.y = base + o.userData.lift * 0.012;
       if (o.userData.spin) {
         o.userData.spin = Math.max(0, o.userData.spin - dt * 1.4);
         o.rotation.y += ease(o.userData.spin) * dt * 5;
       }
     }
-    // 서류철 열기
-    const fo = folder.userData.open ? 1 : 0;
-    folder.userData.cover.rotation.z += ((fo ? -2.2 : -0.06) - folder.userData.cover.rotation.z) * Math.min(1, dt * 5);
+    // 서류철: 표지가 경첩을 축으로 넘어가 책상 왼쪽에 눕기
+    const fu = folder.userData; fu.k = Math.max(0, Math.min(1, (fu.k || 0) + (fu.open ? dt : -dt) / 0.9));
+    const fk = fu.k < 0.5 ? 4 * fu.k ** 3 : 1 - Math.pow(-2 * fu.k + 2, 3) / 2;
+    fu.cover.rotation.z = 0.012 + fk * (Math.PI - 0.07);
+    fu.coverMesh.position.y = Math.sin(fk * Math.PI) * 0.0015; // 넘길 때 살짝 휘는 느낌
 
-    updateStamp(dt);
+    updateStamp(dt); updateFly(dt, time); updatePen(dt, time); updatePenFloat(dt, time);
+    for (const d of signed) { const age = time - d.signedAt; if (age > 15) { d.signFade = Math.max(0, 1 - (age - 15) / 2.5); if ((time * 60 | 0) % 3 === 0 || d.signFade === 0) redraw(d); if (d.signFade === 0) { d.sign = 0; signed.delete(d); redraw(d); } } } updatePencil(dt);
+    lampTiltS += (lampTilt - lampTiltS) * Math.min(1, dt * 12);
+    lamp.head.quaternion.copy(lampQ0).multiply(flyQ.setFromAxisAngle(lampAxis, lampTiltS));
+    lamp.head.getWorldPosition(dust.material.uniforms.uLp.value); lamp.head.getWorldDirection(dust.material.uniforms.uLd.value);
 
     // 스탠드 빛의 미세한 떨림
     lampLevel += ((lamp.on ? 1 : 0) - lampLevel) * Math.min(1, dt * (lamp.on ? 6 : 10));
@@ -287,41 +456,60 @@ async function start() {
     if (first) { first = false; host.classList.add('ready'); document.documentElement.dataset.sceneReady = '1'; }
   }
   frame();
+  if (params.has('debug')) window.__h = { camera, pen, pen2, stamp, lamp, main, done, folder, host, THREE, get fly() { return fly; } };
 
   // ======================================================
   // 모델들
   // ======================================================
-  function paperStack(x, z, n, rot, tex) {
+  function makeSheet(baseGeo, doc) {
+    const geo = baseGeo.clone();
+    geo.userData.rest = Float32Array.from(geo.attributes.position.array);
+    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: doc.tex, roughness: 0.88, side: THREE.DoubleSide, color: 0xd9d2c4, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }));
+    m.rotation.set(-Math.PI / 2, 0, R(-0.03, 0.03));
+    m.castShadow = m.receiveShadow = true;
+    m.userData.doc = doc;
+    return m;
+  }
+  function paperStack(x, z, n, rot, doc) {
     const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot; scene.add(g);
     const t = 0.0017;
-    const inst = new THREE.InstancedMesh(new THREE.BoxGeometry(0.21, t, 0.297), paperMat, n);
+    const inst = new THREE.InstancedMesh(new THREE.BoxGeometry(0.21, t, 0.297), paperMat, n + 40);
     const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), c = new THREE.Color();
-    for (let i = 0; i < n; i++) {
+    for (let i = 0; i < n + 40; i++) {
       e.set(0, R(-0.035, 0.035), 0); q.setFromEuler(e);
       m.compose(new THREE.Vector3(R(-0.004, 0.004), t * (i + 0.5), R(-0.004, 0.004)), q, new THREE.Vector3(1, 1, 1));
       inst.setMatrixAt(i, m);
       const tone = R(0.72, 0.84); c.setRGB(tone, tone * R(0.96, 0.99), tone * R(0.88, 0.94)); inst.setColorAt(i, c);
     }
-    inst.castShadow = inst.receiveShadow = true; g.add(inst);
+    inst.count = n; inst.castShadow = inst.receiveShadow = true; g.add(inst);
     // 맨 위 한 장 (살짝 휘어진 종이)
     const geo = new THREE.PlaneGeometry(0.21, 0.297, 24, 24);
     const p = geo.attributes.position;
     for (let i = 0; i < p.count; i++) {
       const u = p.getX(i) / 0.105, v = p.getY(i) / 0.1485;
       const curl = Math.max(0, u * 0.6 + -v * 0.4 - 0.55);
-      p.setZ(i, curl * curl * 0.012 + Math.sin(u * 2.2) * 0.0006);
+      p.setZ(i, curl * curl * 0.012 + (1 - Math.cos(u * 2.2)) * 0.0004);
     }
     geo.computeVertexNormals();
-    const top = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: tex, roughness: 0.88, side: THREE.DoubleSide, color: 0xd9d2c4 }));
-    top.rotation.set(-Math.PI / 2, 0, R(-0.03, 0.03));
-    top.position.y = t * n + 0.0004;
-    top.castShadow = top.receiveShadow = true;
-    g.add(top);
-    top.userData.label = '서류: 기한 내 제출 완료';
-    interactive.push(top);
-    return { group: g, top, height: t * n + 0.0008 };
+    const st = { group: g, inst, n, t, top: null, height: t * n };
+    st.top = makeSheet(geo, doc); st.top.position.y = t * n + 0.0009; g.add(st.top);
+    g.userData.label = '서류';
+    interactive.push(g);
+    return st;
   }
 
+  function buildTray(st) {
+    const g = st.group; g.position.y = 0.006;
+    const wood = new THREE.MeshPhysicalMaterial({ color: 0x4a2c18, roughness: 0.5, clearcoat: 0.3 });
+    const W = 0.25, D = 0.335, H = 0.028, T = 0.008;
+    const tray = new THREE.Group(); tray.position.copy(g.position); tray.position.y = 0; tray.rotation.y = g.rotation.y; scene.add(tray);
+    const add = (w, h, d, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wood); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; tray.add(m); };
+    add(W, 0.006, D, 0, 0.003, 0);
+    add(W, H, T, 0, H / 2, D / 2 - T / 2); add(W, H, T, 0, H / 2, -D / 2 + T / 2);
+    add(T, H, D, W / 2 - T / 2, H / 2, 0); add(T, H, D, -W / 2 + T / 2, H / 2, 0);
+    const card = new THREE.Mesh(new THREE.PlaneGeometry(0.09, 0.026), new THREE.MeshStandardMaterial({ map: makeLabel('완료'), roughness: 0.9 }));
+    card.position.set(0, H * 0.55, D / 2 + 0.0005); tray.add(card);
+  }
   function buildFolder(x, z, rot) {
     const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot; scene.add(g);
     g.userData.label = '서류철: 눌러서 열기';
@@ -340,9 +528,9 @@ async function start() {
     const cover = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.0025, 0.31), manila);
     cover.position.x = 0.12; cover.castShadow = cover.receiveShadow = true; hinge.add(cover);
     const label = new THREE.Mesh(new THREE.PlaneGeometry(0.11, 0.035), new THREE.MeshStandardMaterial({ map: makeLabel('2026 · 진행 중'), roughness: 0.9 }));
-    label.rotation.x = -Math.PI / 2; label.position.set(0.12, 0.0013, -0.1); hinge.add(label);
-    hinge.rotation.z = -0.06;
-    g.userData.cover = hinge;
+    label.rotation.x = -Math.PI / 2;
+    hinge.rotation.z = 0.012;
+    g.userData.cover = hinge; g.userData.coverMesh = cover; cover.add(label); label.position.set(0, 0.0013, -0.1);
     return g;
   }
 
@@ -437,7 +625,7 @@ async function start() {
     bulb.position.z = 0.04; head.add(bulb);
     const spot = new THREE.SpotLight(0xffc98a, 7.5, 0, 0.78, 0.75, 1.6);
     spot.position.set(0, 0, 0.05); head.add(spot);
-    const tObj = new THREE.Object3D(); tObj.position.copy(target); scene.add(tObj); spot.target = tObj;
+    const tObj = new THREE.Object3D(); tObj.position.set(0, 0, Hd.distanceTo(target.clone().sub(g.position))); head.add(tObj); spot.target = tObj;
     spot.castShadow = true; spot.shadow.mapSize.setScalar(MOBILE ? 1024 : 2048); spot.shadow.bias = -0.0002; spot.shadow.normalBias = 0.012; spot.shadow.camera.near = 0.03; spot.shadow.camera.far = 2.5; spot.shadow.radius = 4;
     const fill = new THREE.PointLight(0xffb36b, 0.16, 0, 2); fill.position.set(0, 0, -0.05); head.add(fill);
 
