@@ -156,22 +156,33 @@ async function start() {
   // ---------- 마우스 ----------
   const mouse = { x: 0, y: 0, sx: 0, sy: 0 };
   const ndc = new THREE.Vector2(9, 9);
-  let lastMove = -9;
-  const onPoint = e => {
-    const r = host.getBoundingClientRect();
-    if (MOBILE) { mouse.x = (e.clientX - r.left) / r.width * 2 - 1; mouse.y = (e.clientY - r.top) / r.height * 2 - 1; }
-    else { mouse.x = e.clientX / window.innerWidth * 2 - 1; mouse.y = e.clientY / window.innerHeight * 2 - 1; }
-    ndc.set((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
-    lastMove = performance.now() / 1000;
-  };
-  window.addEventListener('pointermove', e => { if (!MOBILE) onPoint(e); }, { passive: true });
-  host.addEventListener('pointerdown', onPoint, { passive: true });
-  host.addEventListener('touchmove', e => onPoint(e.touches[0]), { passive: true });
+  let lastMove = -9, down = null;
+  const now = () => performance.now() / 1000;
+  const clamp = v => Math.max(-1, Math.min(1, v));
+  const setNdc = e => { const r = host.getBoundingClientRect(); ndc.set((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); };
+  // 마우스: 화면 어디서든 시점이 마우스를 따라감
+  window.addEventListener('pointermove', e => {
+    if (e.pointerType !== 'mouse' && e.pointerType !== 'pen') return;
+    mouse.x = e.clientX / window.innerWidth * 2 - 1; mouse.y = e.clientY / window.innerHeight * 2 - 1;
+    setNdc(e); lastMove = now();
+  }, { passive: true });
+  // 손가락: 끄는 방향으로 장면이 따라옴, 짧게 누르면 물건 작동
+  host.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY, t: now(), mx: mouse.x, my: mouse.y, moved: 0 }; if (e.pointerType !== 'mouse') setNdc(e); lastMove = now(); }, { passive: true });
+  host.addEventListener('touchmove', e => {
+    if (!down) return; const t = e.touches[0], r = host.getBoundingClientRect();
+    const dx = t.clientX - down.x, dy = t.clientY - down.y; down.moved = Math.max(down.moved, Math.hypot(dx, dy));
+    mouse.x = clamp(down.mx - dx / r.width * 2.4); mouse.y = clamp(down.my - dy / r.height * 1.2); lastMove = now();
+  }, { passive: true });
+  host.addEventListener('pointerup', e => {
+    if (!down) return; const d = down; down = null;
+    if (Math.max(d.moved, Math.hypot(e.clientX - d.x, e.clientY - d.y)) > 12 || now() - d.t > 0.6) return;
+    setNdc(e); const o = pick(); if (o && o.userData.onClick) o.userData.onClick();
+  });
+  host.addEventListener('pointercancel', () => { down = null; });
   if (MOBILE) { const hint = document.querySelector('.scene-hint'); if (hint) hint.textContent = '손가락으로 밀어 보고, 도장과 스탠드를 눌러 보세요'; }
   host.addEventListener('pointerleave', () => ndc.set(9, 9));
   const ray = new THREE.Raycaster();
   let hovered = null;
-  const tip = document.querySelector('[data-scene-tip]');
 
   function pick() {
     ray.setFromCamera(ndc, camera);
@@ -181,10 +192,6 @@ async function start() {
     return o;
   }
 
-  host.addEventListener('click', () => {
-    const o = pick(); if (!o) return;
-    o.userData.onClick && o.userData.onClick();
-  });
 
   // 도장 찍기 애니메이션
   let stampT = -1;
@@ -206,7 +213,7 @@ async function start() {
     else { stampT = -1; p.copy(stampHome); }
     stamp.position.set(p.x, p.y + lift, p.z);
   }
-  lamp.group.userData.onClick = () => { lamp.on = !lamp.on; };
+  lamp.group.userData.onClick = () => { lamp.on = !lamp.on; document.documentElement.dataset.lamp = lamp.on ? 'on' : 'off'; };
   pen.userData.onClick = () => { pen.userData.spin = 1; };
   pen2.userData.onClick = () => { pen2.userData.spin = 1; };
   folder.userData.onClick = () => { folder.userData.open = !folder.userData.open; };
@@ -231,14 +238,14 @@ async function start() {
     if (autoStamp > 0) { autoStamp -= dt; if (autoStamp <= 0) stamp.userData.onClick(); }
 
     // 시점
-    const k = reduce ? 0 : 1;
+    const k = 1; // 사용자가 직접 움직이는 시점이라 동작 줄이기 설정과 무관하게 따라감
     // 휴대폰: 손대지 않으면 천천히 시점이 흔들림
-    if (MOBILE && performance.now() / 1000 - lastMove > 3) { mouse.x = Math.sin(time * 0.35) * 0.6; mouse.y = Math.sin(time * 0.22) * 0.25; }
+    if (MOBILE && !reduce && !down && now() - lastMove > 4) { mouse.x = Math.sin(time * 0.35) * 0.6; mouse.y = Math.sin(time * 0.22) * 0.25; }
     mouse.sx += (mouse.x * k - mouse.sx) * Math.min(1, dt * 3);
     mouse.sy += (mouse.y * k - mouse.sy) * Math.min(1, dt * 3);
     const sc = Math.min(1, Math.max(0, -host.getBoundingClientRect().top / H));
-    camera.position.set(camBase.x + mouse.sx * 0.16, camBase.y - mouse.sy * 0.07 - sc * 0.08, camBase.z - sc * 0.18 + Math.abs(mouse.sx) * 0.02);
-    tmp.set(lookBase.x + mouse.sx * 0.03, lookBase.y - mouse.sy * 0.015, lookBase.z);
+    camera.position.set(camBase.x + mouse.sx * 0.3, camBase.y - mouse.sy * 0.12 - sc * 0.08, camBase.z - sc * 0.18 + Math.abs(mouse.sx) * 0.02);
+    tmp.set(lookBase.x + mouse.sx * 0.05, lookBase.y - mouse.sy * 0.02, lookBase.z);
     camera.lookAt(tmp);
 
     // 마우스 올림
@@ -246,7 +253,6 @@ async function start() {
     if (h !== hovered) {
       hovered = h;
       host.style.cursor = h ? 'pointer' : '';
-      if (tip) { tip.textContent = h ? h.userData.label : ''; tip.classList.toggle('on', !!h); }
     }
     for (const o of interactive) {
       const base = o.userData.baseY ?? (o.userData.baseY = o.position.y);
@@ -261,7 +267,6 @@ async function start() {
     // 서류철 열기
     const fo = folder.userData.open ? 1 : 0;
     folder.userData.cover.rotation.z += ((fo ? -2.2 : -0.06) - folder.userData.cover.rotation.z) * Math.min(1, dt * 5);
-    if (tip && hovered) { tip.style.transform = `translate(${(ndc.x + 1) / 2 * W + 14}px, ${(1 - ndc.y) / 2 * H + 14}px)`; }
 
     updateStamp(dt);
 
