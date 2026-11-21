@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>○○행정사사무소 · 인허가 · 출입국 · 행정심판</title>
+  <meta name="description" content="인허가, 출입국·비자, 행정심판, 민원 서류의 작성과 제출을 대신합니다.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <div class="progress" aria-hidden="true"></div>
+  <div class="loader" aria-hidden="true"><span class="mark">行</span></div>
+
+  <header class="header">
+    <div class="wrap">
+      <a href="index.html" class="logo"><span class="mark">行</span>○○행정사사무소</a>
+      <button class="menu-btn" aria-label="메뉴" aria-expanded="false"><span></span><span></span></button>
+      <nav class="nav">
+        <a href="#services">업무분야</a>
+        <a href="#process">진행절차</a>
+        <a href="#about">사무소 소개</a>
+        <a href="board.html">소식</a>
+        <a href="#contact" class="btn btn-sm">상담 문의</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- 첫 화면 -->
+    <section class="hero" data-hero>
+      <div class="wrap">
+        <div>
+          <p class="label rise in"><b>행정사</b>인허가 · 출입국 · 행정심판 · 민원 서류</p>
+          <h1>
+            <span class="mask"><span>복잡한 행정 서류,</span></span>
+            <span class="mask"><span>작성부터 제출까지</span></span>
+            <span class="mask"><span><em>대신</em> 맡아 드립니다</span></span>
+          </h1>
+          <p class="hero-sub rise in">무엇을 준비해야 하는지부터 기관에 접수하고 결과를 받기까지, 처음 상담한 행정사가 끝까지 함께합니다.</p>
+          <div class="hero-actions rise in">
+            <!-- [교체] 전화번호 -->
+            <a href="tel:02-000-0000" class="btn">전화 상담 02-000-0000 <svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+            <a href="#services" class="btn btn-2">업무분야 보기</a>
+          </div>
+          <div class="hero-meta rise in">
+            <div><b>첫 전화 상담 무료</b>심층 검토는 비용을 먼저 안내</div>
+            <div><b>전국 비대면 진행</b>서류는 이메일·우편으로</div>
+          </div>
+        </div>
+
+        <div class="desk" aria-hidden="true">
+          <div class="desk-light"></div>
+          <div class="sheet under"></div>
+          <div class="sheet">
+            <div class="doc-no"><span>접수번호 2026-1121</span><span>1 / 1</span></div>
+            <h4>행정심판청구서</h4>
+            <dl>
+              <dt>청구인</dt><dd>홍○○</dd>
+              <dt>피청구인</dt><dd>○○구청장</dd>
+              <dt>처분</dt><dd>영업정지 2개월</dd>
+            </dl>
+            <div class="lines"><i></i><i></i><i></i><i></i></div>
+            <div class="sign"><span>대리인 행정사</span><span>홍길동</span></div>
+            <div class="stamp">접수<br>완료</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 철학 -->
+    <section class="statement">
+      <div class="wrap">
+        <p class="label rise"><b>01</b>일하는 방식</p>
+        <p data-statement style="margin-top:32px">행정 절차는 어렵지 않아야 합니다. 저희는 법령을 쉬운 말로 풀어 설명하고, 필요한 서류만 *정확하게 준비해 기한 안에 제출합니다. 진행 상황은 *묻기 전에 먼저 알려 드립니다.</p>
+      </div>
+    </section>
+
+    <!-- 업무분야 -->
+    <!-- 업무분야: 왼쪽 글이 지나가면 오른쪽 서류가 그 업무의 서류로 바뀜 -->
+    <section id="services" class="section filing">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <p class="label rise"><b>02</b>업무분야</p>
+            <h2 class="rise">행정기관에 내는 서류라면<br>대부분 도와드릴 수 있습니다</h2>
+          </div>
+          <p class="rise">행정사법에 따라 행정기관에 제출하는 서류의 작성과 제출 대행, 관련 상담을 합니다.</p>
+        </div>
+        <div class="filing-grid">
+          <div class="filing-list">
+          <article class="fstep" data-doc="영업허가신청서" data-fields="신청인=김○○|업종=일반음식점|소재지=서울 ○○구 ○○로 12" data-stamp="접수">
+            <span class="svc-num">01</span>
+            <h3>인허가 대행</h3>
+            <p>음식점, 숙박업, 건축, 환경 등 영업 인허가와 각종 신고</p>
+          </article>
+          <article class="fstep" data-doc="체류기간연장허가신청서" data-fields="신청인=NGUYEN ○○|체류자격=E-7 → F-2|만료일=2027.02.14" data-stamp="접수">
+            <span class="svc-num">02</span>
+            <h3>출입국 · 비자</h3>
+            <p>체류자격 변경과 연장, 영주권, 귀화, 초청</p>
+          </article>
+          <article class="fstep" data-doc="행정심판청구서" data-fields="청구인=홍○○|피청구인=○○구청장|처분=영업정지 2개월" data-stamp="청구">
+            <span class="svc-num">03</span>
+            <h3>행정심판 · 이의신청</h3>
+            <p>영업정지, 운전면허 취소 등 처분에 대한 청구서 작성</p>
+          </article>
+          <article class="fstep" data-doc="탄원서" data-fields="작성인=이○○|제출처=○○지방법원|요지=선처 요청" data-stamp="제출">
+            <span class="svc-num">04</span>
+            <h3>민원 서류 작성</h3>
+            <p>진정서, 탄원서, 사실증명, 내용증명</p>
+          </article>
+          <article class="fstep" data-doc="지원사업신청서" data-fields="기업명=주식회사 ○○|사업명=2027 창업도약패키지|담당=박○○" data-stamp="접수">
+            <span class="svc-num">05</span>
+            <h3>법인 · 사업 관련</h3>
+            <p>각종 등록과 신고, 정부 지원사업 신청 서류</p>
+          </article>
+          <article class="fstep" data-doc="번역확인서" data-fields="원문=가족관계증명서|언어=한국어 → 영어|용도=해외 제출" data-stamp="확인">
+            <span class="svc-num">06</span>
+            <h3>번역 · 공증 연계</h3>
+            <p>외국 서류 번역과 확인, 아포스티유 준비</p>
+          </article>
+          </div>
+          <div class="filing-doc" aria-hidden="true">
+            <div class="fsheet">
+              <div class="doc-no"><span data-no>접수번호 2026-0001</span><span>1 / 1</span></div>
+              <h4 data-title>영업허가신청서</h4>
+              <dl data-fields></dl>
+              <div class="lines"><i></i><i></i><i></i></div>
+              <div class="sign"><span>대리인 행정사</span><span>홍길동</span></div>
+              <div class="fstamp" data-stamp>접수</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 진행절차 -->
+    <section id="process" class="process">
+      <div class="process-sticky">
+        <div class="wrap">
+          <div class="section-head">
+            <div>
+              <p class="label"><b>03</b>진행절차</p>
+              <h2>상담부터 결과까지 다섯 단계</h2>
+            </div>
+            <p>단계가 끝날 때마다 도장을 찍듯 진행 상황을 알려 드립니다.</p>
+          </div>
+        </div>
+        <div class="process-track">
+          <article class="step"><div class="step-top"><span>01</span><i class="step-stamp">신청</i></div><div><h3>상담 신청</h3><p>전화, 카카오톡, 이메일로 편하게 문의해 주세요.</p></div></article>
+          <article class="step"><div class="step-top"><span>02</span><i class="step-stamp">검토</i></div><div><h3>사안 검토</h3><p>상황을 듣고 필요한 절차와 서류, 예상 기간을 안내합니다.</p></div></article>
+          <article class="step"><div class="step-top"><span>03</span><i class="step-stamp">계약</i></div><div><h3>위임 계약</h3><p>업무 범위와 수수료를 확정하고 위임 계약을 맺습니다.</p></div></article>
+          <article class="step"><div class="step-top"><span>04</span><i class="step-stamp">제출</i></div><div><h3>서류 작성 · 제출</h3><p>필요한 서류를 작성해 관할 기관에 제출합니다.</p></div></article>
+          <article class="step"><div class="step-top"><span>05</span><i class="step-stamp">완료</i></div><div><h3>결과 안내</h3><p>처리 결과와 이후 챙겨야 할 일을 알려 드립니다.</p></div></article>
+        </div>
+        <div class="process-bar"><i></i></div>
+      </div>
+    </section>
+
+    <!-- 사무소 소개 -->
+    <section id="about" class="section">
+      <div class="wrap about-row">
+        <!-- [교체] 대표 사진: portrait-slot 자리에 <img> 넣기 -->
+        <figure class="portrait rise">
+          <div class="portrait-slot">대표 행정사 사진<br>4 : 5 비율</div>
+          <figcaption><b>홍길동</b><span>대표 행정사 · 등록번호 제0000-0000호</span></figcaption>
+        </figure>
+        <div>
+          <p class="label rise"><b>04</b>사무소 소개</p>
+          <div class="section-head" style="margin-bottom:40px; grid-template-columns:1fr">
+            <h2 class="rise">의뢰인 입장에서<br>가장 현실적인 방법을 찾습니다</h2>
+          </div>
+          <ul class="values">
+            <li class="rise"><span class="num">01</span><div><h4>법령 검토부터</h4><p>비슷한 사례와 관련 법령을 먼저 확인하고 가능성을 솔직하게 말씀드립니다.</p></div></li>
+            <li class="rise"><span class="num">02</span><div><h4>진행 상황 공유</h4><p>접수, 보완 요청, 결과 통지까지 단계마다 알려 드립니다.</p></div></li>
+            <li class="rise"><span class="num">03</span><div><h4>수수료는 미리</h4><p>계약 전에 업무 범위와 비용을 확정해서 안내합니다.</p></div></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 소식 -->
+    <section class="section" style="padding-top:0">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <p class="label rise"><b>05</b>소식</p>
+            <h2 class="rise">알아 두면 좋은 행정 안내</h2>
+          </div>
+          <a href="board.html" class="btn btn-2 rise" style="justify-self:end">전체 글 보기 <svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        </div>
+        <div class="posts" data-latest></div>
+      </div>
+    </section>
+
+    <!-- 자주 묻는 질문 -->
+    <section id="faq" class="section" style="padding-top:0">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <p class="label rise"><b>06</b>자주 묻는 질문</p>
+            <h2 class="rise">상담 전에 많이 물어보시는 것</h2>
+          </div>
+        </div>
+        <div class="faq">
+          <div class="faq-item rise"><button class="faq-q" aria-expanded="false">상담 비용이 있나요?<svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button><div class="faq-a"><div><p>첫 전화 상담은 무료입니다. 서류 검토가 필요한 심층 상담은 미리 비용을 안내해 드립니다.</p></div></div></div>
+          <div class="faq-item rise"><button class="faq-q" aria-expanded="false">사무소에 직접 가야 하나요?<svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button><div class="faq-a"><div><p>대부분 전화, 이메일, 카카오톡으로 진행합니다. 원본 서류 확인이 필요할 때만 방문이나 우편을 부탁드립니다.</p></div></div></div>
+          <div class="faq-item rise"><button class="faq-q" aria-expanded="false">처리 기간은 얼마나 걸리나요?<svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button><div class="faq-a"><div><p>업무 종류와 관할 기관에 따라 다릅니다. 상담할 때 예상 기간을 구체적으로 알려 드립니다.</p></div></div></div>
+          <div class="faq-item rise"><button class="faq-q" aria-expanded="false">지방에 있어도 맡길 수 있나요?<svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button><div class="faq-a"><div><p>네, 전국 어디서나 가능합니다. 서류를 비대면으로 주고받으며 진행합니다.</p></div></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 상담 -->
+    <section id="contact" class="cta" data-cta>
+      <div class="wrap">
+        <p class="label rise"><b>07</b>상담 문의</p>
+        <div class="cta-stamp" aria-hidden="true">상담<br>접수</div>
+        <h2 class="rise" style="margin-top:24px">기한이 있는 일이라면<br><em>오늘</em> 전화 주세요</h2>
+        <div class="hero-actions rise">
+          <a href="tel:02-000-0000" class="btn">02-000-0000 <svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a href="#" class="btn btn-2">카카오톡 상담</a>
+        </div>
+        <!-- [교체] 연락처 -->
+        <dl class="contact-grid">
+          <div class="rise"><dt>전화</dt><dd>02-000-0000</dd></div>
+          <div class="rise"><dt>이메일</dt><dd>office@example.com</dd></div>
+          <div class="rise"><dt>주소</dt><dd>서울특별시 ○○구 ○○로 00, 0층</dd></div>
+          <div class="rise"><dt>운영시간</dt><dd>평일 09:00 – 18:00</dd></div>
+        </dl>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <div>
+        <p class="logo"><span class="mark">行</span>○○행정사사무소</p>
+        <p>대표 행정사 홍길동 · 사업자등록번호 000-00-00000 · 행정사 등록번호 제0000-0000호</p>
+        <p>© 2026 ○○행정사사무소</p>
+      </div>
+      <div><a href="admin.html">관리자</a></div>
+    </div>
+  </footer>
+
+  <script src="assets/vendor/lenis.min.js"></script>
+  <script src="assets/store.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>

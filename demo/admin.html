@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>관리자 · ○○행정사사무소</title>
+  <meta name="description" content="인허가, 출입국·비자, 행정심판, 민원 서류의 작성과 제출을 대신합니다.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body class="admin">
+  <style>
+    .admin-top { height: 64px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); }
+    .admin-top .logo small { color: var(--muted); font-weight: 400; margin-left: 4px; }
+    .admin-top nav { display: flex; gap: 8px; }
+    .login { min-height: calc(100vh - 64px); display: grid; place-items: center; }
+    .login form { width: min(380px, 100%); padding: 32px; border-radius: 16px; background: var(--card); box-shadow: inset 0 0 0 1px var(--line); }
+    .login h1 { font-family: var(--serif); font-weight: 500; font-size: 28px; margin-bottom: 8px; }
+    .login p { color: var(--text-2); font-size: 14px; margin-bottom: 24px; }
+    .field { display: grid; gap: 8px; margin-bottom: 16px; }
+    .field label { font-size: 13px; color: var(--text-2); }
+    .input { height: 44px; padding: 0 12px; border-radius: 8px; border: 0; background: var(--raised); box-shadow: inset 0 0 0 1px var(--line); color: var(--text); transition: box-shadow .15s var(--ease); }
+    .input:focus { outline: none; box-shadow: inset 0 0 0 1px var(--seal); }
+    textarea.input { height: 260px; padding: 12px; resize: vertical; line-height: 1.7; }
+    .hint { font-size: 13px; color: var(--muted); margin-top: 12px; }
+    .err { color: #e5484d; font-size: 13px; min-height: 20px; }
+    .dash { display: grid; grid-template-columns: 1.1fr .9fr; gap: 32px; padding: 32px 0 96px; }
+    .panel { padding: 24px; border-radius: 16px; background: var(--card); box-shadow: inset 0 0 0 1px var(--line); }
+    .panel h2 { font-size: 18px; font-weight: 500; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+    .panel h2 small { font-size: 13px; color: var(--muted); font-weight: 400; font-variant-numeric: tabular-nums; }
+    .row2 { display: grid; grid-template-columns: 140px 1fr; gap: 12px; }
+    .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+    .plist li { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
+    .plist li:last-child { border-bottom: 0; }
+    .plist .t { font-size: 15px; }
+    .plist .m { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .plist .m b { color: var(--seal); font-weight: 400; margin-right: 8px; }
+    .plist .ops { display: flex; gap: 4px; }
+    .ghost { height: 32px; padding: 0 10px; border-radius: 8px; border: 0; background: transparent; color: var(--text-2); font-size: 13px; transition: background-color .15s var(--ease), color .15s var(--ease); }
+    .ghost:hover { background: var(--raised); color: var(--text); }
+    .ghost.danger:hover { color: #e5484d; }
+    .toast { position: fixed; left: 50%; bottom: 32px; transform: translate(-50%, 12px); opacity: 0; padding: 12px 20px; border-radius: 10px; background: var(--text); color: var(--bg); font-size: 14px; transition: opacity .2s var(--ease), transform .2s var(--ease); pointer-events: none; z-index: 900; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .demo-note { margin-top: 16px; font-size: 13px; color: var(--muted); }
+    @media (max-width: 860px) { .dash { grid-template-columns: 1fr; } .row2 { grid-template-columns: 1fr; } }
+  </style>
+
+  <div class="wrap admin-top">
+    <a href="index.html" class="logo"><span class="mark">行</span>○○행정사사무소<small>관리자</small></a>
+    <nav data-authed hidden>
+      <a href="board.html" class="btn btn-2 btn-sm" target="_blank">사이트에서 보기</a>
+      <button class="ghost" data-logout>로그아웃</button>
+    </nav>
+  </div>
+
+  <!-- 로그인 -->
+  <section class="login wrap" data-login>
+    <form data-login-form>
+      <h1>관리자 로그인</h1>
+      <p>소식 게시판에 글을 올리고 관리합니다</p>
+      <div class="field"><label for="pw">비밀번호</label><input id="pw" class="input" type="password" autocomplete="current-password" autofocus></div>
+      <div class="err" data-err></div>
+      <button class="btn" style="width:100%; justify-content:center">들어가기</button>
+      <p class="hint">데모 비밀번호는 1234 입니다</p>
+    </form>
+  </section>
+
+  <!-- 글 관리 -->
+  <main class="wrap dash" data-dash hidden>
+    <section class="panel">
+      <h2><span data-form-title>새 글 쓰기</span></h2>
+      <form data-post-form>
+        <div class="row2">
+          <div class="field"><label for="cat">분류</label><select id="cat" class="input" data-cat></select></div>
+          <div class="field"><label for="title">제목</label><input id="title" class="input" required maxlength="80" placeholder="예: 체류기간 연장 신청 안내"></div>
+        </div>
+        <div class="field"><label for="body">내용</label><textarea id="body" class="input" required placeholder="본문을 입력하세요. 줄바꿈은 그대로 보입니다."></textarea></div>
+        <div class="actions">
+          <button type="button" class="ghost" data-cancel hidden>취소</button>
+          <button class="btn btn-seal" data-submit>게시하기</button>
+        </div>
+      </form>
+    </section>
+    <section class="panel">
+      <h2>올라간 글 <small data-count></small></h2>
+      <ul class="plist" data-list></ul>
+      <p class="demo-note">데모라서 글은 이 브라우저에만 저장됩니다. <button class="ghost" data-reset>예시 글로 되돌리기</button></p>
+    </section>
+  </main>
+
+  <div class="toast" data-toast></div>
+
+  <script src="assets/store.js"></script>
+  <script>
+  (function () {
+    var DEMO_PW = '1234'; // 데모 전용. 실제 서비스에서는 서버에서 로그인 처리
+    var $ = function (s) { return document.querySelector(s); };
+    var editing = null;
+
+    function authed() { try { return sessionStorage.getItem('admin-ok') === '1'; } catch (e) { return false; } }
+    function show() {
+      var ok = authed();
+      $('[data-login]').hidden = ok; $('[data-dash]').hidden = !ok; $('[data-authed]').hidden = !ok;
+      if (ok) render();
+    }
+    function toast(msg) {
+      var t = $('[data-toast]'); t.textContent = msg; t.classList.add('show');
+      clearTimeout(t._h); t._h = setTimeout(function () { t.classList.remove('show'); }, 2000);
+    }
+
+    $('[data-login-form]').addEventListener('submit', function (e) {
+      e.preventDefault();
+      if ($('#pw').value === DEMO_PW) { try { sessionStorage.setItem('admin-ok', '1'); } catch (x) {} show(); }
+      else { $('[data-err]').textContent = '비밀번호가 맞지 않습니다'; $('#pw').select(); }
+    });
+    $('[data-logout]').addEventListener('click', function () { try { sessionStorage.removeItem('admin-ok'); } catch (x) {} show(); });
+
+    $('[data-cat]').innerHTML = PostStore.categories.map(function (c) { return '<option>' + c + '</option>'; }).join('');
+
+    function render() {
+      var list = PostStore.all();
+      $('[data-count]').textContent = list.length + '개';
+      $('[data-list]').innerHTML = list.map(function (p) {
+        return '<li><div><div class="t">' + PostStore.esc(p.title) + '</div><div class="m"><b>' + PostStore.esc(p.category) + '</b>' + PostStore.fmt(p.date) + '</div></div>' +
+          '<div class="ops"><a class="ghost" style="display:inline-flex;align-items:center" target="_blank" href="post.html?id=' + encodeURIComponent(p.id) + '">보기</a>' +
+          '<button class="ghost" data-edit="' + p.id + '">수정</button><button class="ghost danger" data-del="' + p.id + '">삭제</button></div></li>';
+      }).join('') || '<li style="color:var(--muted)">아직 글이 없습니다</li>';
+    }
+    function resetForm() {
+      editing = null; $('[data-post-form]').reset();
+      $('[data-form-title]').textContent = '새 글 쓰기'; $('[data-submit]').textContent = '게시하기'; $('[data-cancel]').hidden = true;
+    }
+
+    $('[data-post-form]').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var data = { category: $('[data-cat]').value, title: $('#title').value.trim(), body: $('#body').value.trim() };
+      if (!data.title || !data.body) return;
+      if (editing) { PostStore.update(editing, data); toast('수정했습니다'); }
+      else { PostStore.add(data); toast('게시했습니다. 사이트 소식에 바로 보입니다'); }
+      resetForm(); render();
+    });
+    $('[data-cancel]').addEventListener('click', resetForm);
+    $('[data-list]').addEventListener('click', function (e) {
+      var ed = e.target.closest('[data-edit]'), del = e.target.closest('[data-del]');
+      if (ed) {
+        var p = PostStore.get(ed.dataset.edit); editing = p.id;
+        $('[data-cat]').value = p.category; $('#title').value = p.title; $('#body').value = p.body;
+        $('[data-form-title]').textContent = '글 수정'; $('[data-submit]').textContent = '수정 저장'; $('[data-cancel]').hidden = false;
+        $('#title').focus();
+      }
+      if (del && confirm('이 글을 삭제할까요?')) { PostStore.remove(del.dataset.del); if (editing === del.dataset.del) resetForm(); render(); toast('삭제했습니다'); }
+    });
+    $('[data-reset]').addEventListener('click', function () { if (confirm('예시 글 3개로 되돌릴까요? 직접 쓴 글은 지워집니다.')) { PostStore.reset(); resetForm(); render(); toast('예시 글로 되돌렸습니다'); } });
+
+    show();
+  })();
+  </script>
+</body>
+</html>
