@@ -188,7 +188,6 @@ async function start() {
     setNdc(e); const o = pick(); if (o && o.userData.onClick && (!d.lamp || o === lamp.group)) o.userData.onClick();
   });
   host.addEventListener('pointercancel', () => { down = null; });
-  if (MOBILE) { const hint = document.querySelector('.scene-hint'); if (hint) hint.textContent = '손가락으로 밀어 보고, 도장과 스탠드를 눌러 보세요'; }
   host.addEventListener('pointerleave', () => ndc.set(9, 9));
   const ray = new THREE.Raycaster();
   let hovered = null;
